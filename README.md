@@ -1,325 +1,365 @@
-# EEG-Based Seizure Detection using Deep Learning
+# EEG Seizure Detection using Deep Learning
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
 
-## 🧠 Problem Statement
+A comprehensive implementation of automated seizure detection from scalp EEG recordings using 1D Convolutional Neural Networks. This project demonstrates proper machine learning practices for highly imbalanced medical time-series data.
 
-Epilepsy affects approximately 50 million people worldwide, with seizures occurring unpredictably and potentially causing serious harm. **Automated seizure detection from EEG signals** is critical for:
+## 📋 Table of Contents
 
-- **Early warning systems**: Alert patients and caregivers before seizures occur
-- **Clinical monitoring**: Assist neurologists in diagnosing and tracking epilepsy
-- **Treatment optimization**: Enable precise medication adjustment and intervention timing
-- **Research**: Accelerate understanding of seizure mechanisms and patterns
+- [Overview](#overview)
+- [Features](#features)
+- [Dataset](#dataset)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Model Architecture](#model-architecture)
+- [Performance](#performance)
+- [Results](#results)
+- [Clinical Considerations](#clinical-considerations)
+- [Future Work](#future-work)
+- [License](#license)
 
-### The Challenge
+## 🎯 Overview
 
-Traditional manual EEG analysis is:
-- ⏱️ **Time-consuming**: Neurologists must review hours of continuous EEG recordings
-- 👁️ **Subjective**: Interpretation varies between experts
-- 💰 **Expensive**: Requires specialized medical expertise
-- ⚡ **Not real-time**: Cannot provide immediate intervention
+This repository contains a complete end-to-end pipeline for EEG seizure detection, including:
 
-**Our Goal**: Build an automated, accurate, and deployable deep learning system that can detect seizures from raw EEG signals in real-time with high sensitivity and acceptable precision.
+- Data preprocessing and visualization
+- Patient-aware cross-validation
+- Custom CNN architecture optimized for EEG signals
+- Comprehensive evaluation metrics
+- Production-ready code structure
 
----
+**Key Metrics**:
+- ROC-AUC: 0.74
+- Specificity: 99.19%
+- Recall: 8.61% (requires improvement for clinical use)
 
-## 🎯 What This Project Does
+## ✨ Features
 
-This project implements a **Convolutional Neural Network (CNN)** to automatically detect seizure events from scalp EEG recordings using the CHB-MIT Scalp EEG Database.
+### Technical Highlights
 
-### Key Features
+✅ **Patient-Safe Cross-Validation**
+- GroupKFold prevents data leakage
+- No patient appears in both train/validation sets
 
-✅ **Patient-Safe Cross-Validation**: GroupKFold ensures no patient appears in both training and validation, preventing data leakage and ensuring realistic performance estimates
+✅ **Memory-Efficient Design**
+- Streaming dataset loads epochs on-demand
+- Processes full dataset on single GPU
 
-✅ **Memory-Efficient Pipeline**: Streaming data architecture loads EEG epochs on-demand, enabling processing of large datasets without memory overflow
+✅ **Class Imbalance Solutions**
+- Balanced sampling (20% positive rate)
+- Weighted loss function
+- Threshold optimization
 
-✅ **Robust Channel Handling**: Automatically handles variable EEG channel configurations across different recordings with zero-padding
-
-✅ **Class Imbalance Solutions**: Implements balanced sampling and weighted loss functions to handle rare seizure events (~5% of data)
-
-✅ **Clinical-Grade Evaluation**: Comprehensive metrics including ROC-AUC, PR-AUC, sensitivity, specificity, and threshold optimization
-
----
-
-## 🔬 Methodology
-
-### 1. **Data Preprocessing**
-- **Bandpass filtering**: 1-45 Hz to remove artifacts and noise
-- **Epoch segmentation**: 25-second windows capturing seizure context
-- **Channel normalization**: Average referencing and standardization
-- **Label generation**: Automatic annotation from clinical seizure timestamps
-
-### 2. **Model Architecture**
-
-```
-Input: (Batch, 23 channels, ~6400 timepoints)
-    ↓
-Conv1D Block 1: 23 → 64 channels (kernel=7)
-    ↓ MaxPool (2x)
-Conv1D Block 2: 64 → 128 channels (kernel=5)
-    ↓ MaxPool (2x)
-Conv1D Block 3: 128 → 256 channels (kernel=3)
-    ↓ Adaptive Average Pool
-Fully Connected: 256 → 1
-    ↓
-Output: Seizure probability (0-1)
-```
-
-**Design Rationale**:
-- **Progressive channel expansion**: Extracts hierarchical temporal features from low-level spikes to high-level seizure patterns
-- **Batch normalization**: Stabilizes training across diverse patient populations
-- **Dropout (30%)**: Prevents overfitting on rare seizure class
-- **Adaptive pooling**: Handles variable-length sequences robustly
-
-### 3. **Training Strategy**
-
-- **Cross-validation**: 4-fold GroupKFold (patient-wise splits)
-- **Batch size**: 64 training / 128 validation
-- **Optimizer**: Adam with learning rate 1e-3
-- **Loss function**: Binary Cross-Entropy with positive class weighting
-- **Early stopping**: Patience=2 epochs on validation loss
-- **Balanced sampling**: Maintains ~20% positive rate in training data
-
-### 4. **Evaluation Metrics**
-
-Given the critical nature of missing seizures:
-- **Primary metric**: F1-Score (balanced precision-recall)
-- **Sensitivity (Recall)**: Proportion of actual seizures detected
-- **Specificity**: Proportion of non-seizures correctly identified
-- **ROC-AUC**: Overall discrimination ability
-- **PR-AUC**: Performance on imbalanced data
-- **Threshold optimization**: Maximize F1 on out-of-fold predictions
-
----
+✅ **Comprehensive Evaluation**
+- ROC and Precision-Recall curves
+- Confusion matrix analysis
+- Learning curve visualization
 
 ## 📊 Dataset
 
 **CHB-MIT Scalp EEG Database**
-- **Source**: [PhysioNet](https://physionet.org/content/chbmit/1.0.0/)
-- **Patients**: 14 pediatric subjects with intractable seizures
-- **Recordings**: 421 EDF files (~983 hours of continuous EEG)
-- **Sampling rate**: 256 Hz
-- **Channels**: 23 scalp EEG electrodes (10-20 system)
-- **Seizure annotations**: 152 documented seizure events
-- **Class distribution**: ~95% non-seizure, ~5% seizure (highly imbalanced)
 
-### Data Structure
+| Property | Value |
+|----------|-------|
+| Source | PhysioNet |
+| Patients | 14 (pediatric epilepsy) |
+| Recordings | 421 EDF files |
+| Channels | 23 bipolar montage |
+| Sampling Rate | 256 Hz |
+| Duration | ~916 hours total |
+| Seizure Events | 152 annotated |
+| Class Imbalance | 0.72% seizure epochs |
+
+**Download Instructions**:
+```bash
+# Create data directory
+mkdir -p ~/Desktop/EEG
+
+# Download from PhysioNet (requires registration)
+# https://physionet.org/content/chbmit/1.0.0/
+
+# Expected structure:
+# ~/Desktop/EEG/
+# ├── chb01/
+# │   ├── chb01_01.edf
+# │   └── chb01-summary.txt
+# ├── chb02/
+# └── ...
 ```
-Desktop/EEG/
-├── chb01/
-│   ├── chb01_01.edf
-│   ├── chb01_02.edf
-│   └── chb01-summary.txt
-├── chb02/
-│   ├── chb02_01.edf
-│   └── chb02-summary.txt
-└── ...
-```
 
----
-
-## 🚀 Getting Started
+## 🚀 Installation
 
 ### Prerequisites
 
-```bash
-Python 3.8+
-PyTorch 2.0+
-MNE-Python (EEG processing)
-NumPy, Pandas, Matplotlib, Seaborn
-scikit-learn
-```
+- Python 3.8 or higher
+- CUDA-capable GPU (recommended)
+- 8GB+ RAM
 
-### Installation
-
-1. **Clone the repository**
+### Quick Install
 ```bash
+# Clone repository
 git clone https://github.com/yourusername/eeg-seizure-detection.git
 cd eeg-seizure-detection
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-2. **Install dependencies**
+### Requirements
+
+Create `requirements.txt`:
+```txt
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+mne>=1.5.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tqdm>=4.65.0
+jupyter>=1.0.0
+```
+
+## 🏁 Quick Start
+
+### 1. Download Data
+
+Visit [CHB-MIT Database](https://physionet.org/content/chbmit/1.0.0/) and download to `~/Desktop/EEG/`
+
+### 2. Run Notebook
 ```bash
-pip install torch torchvision torchaudio
-pip install mne numpy pandas matplotlib seaborn scikit-learn tqdm
+jupyter notebook v2.ipynb
 ```
 
-3. **Download the CHB-MIT dataset**
-```bash
-# Visit https://physionet.org/content/chbmit/1.0.0/
-# Download and extract to ~/Desktop/EEG/
+### 3. Execute Cells
+
+Run sections sequentially:
+1. **Setup** (Sections 1-2): ~2 minutes
+2. **EDA** (Section 3): ~5 minutes
+3. **Training** (Section 4): ~45 minutes (GPU) / ~12 hours (CPU)
+4. **Evaluation** (Sections 5-6): ~3 minutes
+
+### 4. Expected Output
+```
+============================================================
+FINAL MODEL PERFORMANCE (Out-of-Fold)
+============================================================
+ROC-AUC:        0.7362
+PR-AUC:         0.0330
+F1 Score:       0.0804
+Precision:      0.0754
+Recall:         0.0861
+Threshold used: 0.980
+============================================================
 ```
 
-### Running the Notebook
+## 🏗️ Model Architecture
 
-1. **Launch Jupyter**
-```bash
-jupyter notebook
+### CNN Design
+```
+Input: (batch, 23 channels, 6400 timesteps)
+
+Layer                Output Shape        Parameters
+──────────────────────────────────────────────────────
+Conv1d (k=7)         (B, 64, ~3200)      10,432
+BatchNorm1d          (B, 64, ~3200)      128
+ReLU + MaxPool       (B, 64, ~1600)      -
+──────────────────────────────────────────────────────
+Conv1d (k=5)         (B, 128, ~800)      40,960
+BatchNorm1d          (B, 128, ~800)      256
+ReLU + MaxPool       (B, 128, ~400)      -
+──────────────────────────────────────────────────────
+Conv1d (k=3)         (B, 256, ~400)      98,560
+BatchNorm1d          (B, 256, ~400)      512
+ReLU + AdaptivePool  (B, 256, 1)         -
+──────────────────────────────────────────────────────
+Flatten + Dropout    (B, 256)            -
+Linear               (B, 1)              257
+──────────────────────────────────────────────────────
+Total: 151,169 parameters
 ```
 
-2. **Open** `EEG_Seizure_Detection.ipynb`
+**Design Rationale**:
+- Progressive channel expansion captures hierarchical features
+- Adaptive pooling handles variable sequence lengths
+- Dropout prevents overfitting on rare seizure class
 
-3. **Configure paths** in the first cell if your data is in a different location
+## 📈 Performance
 
-4. **Run all cells** (Runtime: ~30-45 minutes on CPU, ~15-20 minutes on GPU)
+### Metrics Summary
 
----
+| Metric | Score | Clinical Target |
+|--------|-------|-----------------|
+| ROC-AUC | 0.7362 | >0.90 |
+| PR-AUC | 0.0330 | >0.50 |
+| Sensitivity | 8.61% | **>95%** |
+| Specificity | 99.19% | >85% |
+| Precision | 7.54% | >20% |
+| F1 Score | 8.04% | - |
 
-## 📈 Results
+### Confusion Matrix
+```
+                 Predicted
+                 Negative  Positive
+Actual Negative   58,339      478
+Actual Positive      414       39
+```
 
-### Model Performance (Out-of-Fold Validation)
+**Interpretation**:
+- ✅ Excellent at ruling out non-seizures (99.19% specificity)
+- ❌ Poor at detecting actual seizures (8.61% recall)
+- ⚠️ **Not clinically viable** - missing 91% of seizures
 
-| Metric | Score | Clinical Interpretation |
-|--------|-------|------------------------|
-| **ROC-AUC** | 0.85-0.92 | Excellent discrimination ability |
-| **PR-AUC** | 0.65-0.75 | Good performance on imbalanced data |
-| **F1 Score** | 0.70-0.80 | Balanced precision-recall tradeoff |
-| **Sensitivity** | 75-85% | Catches majority of seizures |
-| **Specificity** | 85-95% | Low false alarm rate |
+## 🔬 Results
 
-### Key Insights
+### Learning Curves
 
-✅ **Patient-wise generalization works**: Model successfully transfers across different patients
+The model shows:
+- Steady training loss decrease
+- Moderate generalization gap
+- Early stopping at epoch 2-3 per fold
 
-✅ **Balanced sampling helps**: Maintaining ~20% positive rate prevents model collapse to always predicting non-seizure
+### Threshold Optimization
 
-✅ **Threshold matters**: Default 0.5 threshold is suboptimal; F1-optimized threshold (~0.3-0.4) improves clinical utility
+- Optimal F1 at threshold = 0.98
+- Very conservative decision boundary
+- Prioritizes precision over recall
 
-⚠️ **Class imbalance remains challenging**: Precision-recall tradeoff requires careful tuning for deployment
+### Class Imbalance Impact
 
-⚠️ **Patient variability**: Some patients have more predictable seizure patterns than others
-
----
+- Only 453 seizure epochs out of 63,336 total
+- PR-AUC (0.03) reflects difficulty with rare class
+- ROC-AUC (0.74) shows reasonable discrimination
 
 ## 🏥 Clinical Considerations
 
-### For Deployment
+### Critical Limitations
 
-1. **High Sensitivity Required**: In clinical settings, missing a seizure (false negative) is far more dangerous than a false alarm
-   - Target: >95% sensitivity even at cost of lower precision
-   - Consider ensemble methods or more conservative thresholds
+⚠️ **This model is NOT ready for clinical use**
 
-2. **Real-Time Constraints**: Current model processes 25-second epochs
-   - Latency: ~50-100ms inference time on GPU
-   - Consider sliding windows for continuous monitoring
+**Why?**
+1. **Low Recall (8.61%)**: Misses 91% of seizures
+2. **Clinical Requirement**: Need >95% sensitivity
+3. **Safety Critical**: False negatives are unacceptable
 
-3. **Patient-Specific Calibration**: Performance varies across individuals
-   - Recommend fine-tuning on patient-specific data
-   - Collect initial baseline recordings for personalization
+### Clinical Requirements
 
-4. **Interpretability**: Clinical adoption requires explainability
-   - Add attention mechanisms to highlight critical time segments
-   - Visualize learned filters and activation patterns
+For medical deployment:
 
----
+- **Sensitivity**: >95% (currently 8.61%)
+- **Specificity**: >85% (currently 99.19% ✓)
+- **Latency**: <1 second real-time
+- **Regulatory**: FDA/CE approval required
+- **Validation**: Clinical trial needed
 
-## 🔮 Future Improvements
+### Path to Clinical Viability
 
-### Short-Term
-- [ ] **Hyperparameter tuning**: Grid search for optimal learning rate, batch size, architecture depth
-- [ ] **Data augmentation**: Time warping, amplitude scaling, noise injection
-- [ ] **Ensemble methods**: Combine multiple models for robustness
-- [ ] **Confusion matrix analysis**: Study misclassified cases to understand failure modes
+1. **Increase Recall**:
+   - Lower threshold (0.5 instead of 0.98)
+   - More aggressive minority oversampling
+   - Focal loss for hard examples
 
-### Medium-Term
-- [ ] **Transformer architecture**: Self-attention for long-range temporal dependencies
-- [ ] **Multi-task learning**: Simultaneously predict seizure type (focal vs. generalized)
-- [ ] **Time-frequency features**: Incorporate spectrogram or wavelet representations
-- [ ] **Patient-specific fine-tuning**: Meta-learning or few-shot adaptation
+2. **Architecture Upgrades**:
+   - Attention mechanisms
+   - Transformer encoders
+   - Multi-scale features
 
-### Long-Term
-- [ ] **Real-time deployment**: Optimize for edge devices (Raspberry Pi, wearables)
-- [ ] **Seizure prediction**: Forecast seizures minutes before onset (pre-ictal detection)
-- [ ] **Clinical trial**: Validate in prospective hospital setting
-- [ ] **Multi-modal fusion**: Combine EEG with ECG, movement sensors, video
+3. **Clinical Integration**:
+   - Patient-specific calibration
+   - Real-time optimization
+   - Regulatory compliance
 
----
+## 🔧 Future Work
 
-## 📁 Project Structure
+### Immediate Priorities
 
-```
-eeg-seizure-detection/
-├── README.md                          # This file
-├── EEG_Seizure_Detection.ipynb        # Main notebook
-├── requirements.txt                   # Python dependencies
-├── data/                              # Dataset (not included)
-│   └── README.md                      # Data download instructions
-├── models/                            # Saved model checkpoints
-│   └── cnn_best_model.pth
-├── results/                           # Evaluation outputs
-│   ├── confusion_matrix.png
-│   ├── roc_curve.png
-│   └── threshold_optimization.png
-└── utils/                             # Helper functions (optional)
-    ├── data_loader.py
-    ├── preprocessing.py
-    └── visualization.py
+1. **Boost Recall**:
+```python
+# Proposed changes
+- Increase training positive rate to 50%
+- Implement focal loss (γ=2)
+- Add SMOTE-style augmentation
+- Ensemble multiple models
 ```
 
----
+2. **Data Augmentation**:
+```python
+# Time-series specific
+- Temporal warping
+- Amplitude jittering
+- Frequency perturbation
+- Channel dropout
+```
 
-## 🤝 Contributing
+3. **Advanced Architecture**:
+```python
+# Model improvements
+- Self-attention layers
+- Multi-head attention
+- Dilated convolutions
+- Wavelet features
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes:
+### Long-term Goals
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- Patient-specific fine-tuning
+- Real-time inference pipeline
+- Model quantization (INT8)
+- Regulatory approval
+- Clinical validation study
 
----
+## 📚 Citation
+```bibtex
+@software{eeg_seizure_detection,
+  title={EEG Seizure Detection using Deep Learning},
+  author={Your Name},
+  year={2025},
+  publisher={GitHub},
+  url={https://github.com/yourusername/eeg-seizure-detection}
+}
+```
 
-## 📚 References
+**Dataset**:
+```bibtex
+@article{shoeb2009,
+  title={Application of machine learning to epileptic seizure detection},
+  author={Shoeb, Ali H},
+  year={2009},
+  school={MIT}
+}
+```
 
-### Dataset
-- Shoeb, A. (2009). Application of Machine Learning to Epileptic Seizure Onset Detection and Treatment. PhD Thesis, Massachusetts Institute of Technology.
-- Goldberger, A. L., et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet: Components of a new research resource for complex physiologic signals. Circulation, 101(23), e215-e220.
+## 📄 License
 
-### Related Work
-- Acharya, U. R., et al. (2018). Automated EEG analysis of epilepsy: A review. Knowledge-Based Systems, 45, 147-165.
-- Truong, N. D., et al. (2018). Convolutional neural networks for seizure prediction using intracranial and scalp electroencephalogram. Neural Networks, 105, 104-111.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-### Tools
-- MNE-Python: https://mne.tools/
-- PyTorch: https://pytorch.org/
-- PhysioNet: https://physionet.org/
+## ⚠️ Disclaimer
 
----
+**For research and educational purposes only.**
 
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👤 Author
-
-**Krithika Annaswamy Kannan**
-- 🎓 Master's in Data Analytics Engineering, Northeastern University
-- 💼 Data Engineer with 3+ years experience in healthcare analytics
-- 🔗 [LinkedIn](https://linkedin.com/in/krithika-a-k) | [GitHub](https://github.com/krithikaak05)
-
----
+- NOT approved for clinical/medical use
+- Insufficient recall for patient safety
+- Requires extensive validation
 
 ## 🙏 Acknowledgments
 
-- **CHB-MIT Database**: Dr. Ali Shoeb and the clinical team at Children's Hospital Boston
-- **PhysioNet**: For maintaining and providing access to biomedical datasets
-- **MNE Community**: For excellent EEG processing tools and documentation
-- **Northeastern University**: For academic support and computational resources
+- CHB-MIT Dataset: Children's Hospital Boston & MIT
+- PhysioNet: Physiological signal research platform
+- MNE-Python: EEG processing tools
+- PyTorch: Deep learning framework
 
 ---
 
-## 📞 Contact
-
-For questions, suggestions, or collaborations:
-- 📧 Email: krithikaak05@gmail.com
-- 💬 Open an issue in this repository
-- 🔗 Connect on [LinkedIn](https://linkedin.com/in/krithika-a-k)
+**⭐ Star this repo if you find it useful!**
 
 ---
 
-**⭐ If you find this project useful, please consider giving it a star!**
+**Contact**: [Your Email] | [Your Website]  
+**Last Updated**: January 2025
