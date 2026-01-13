@@ -360,6 +360,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 **⭐ Star this repo if you find it useful!**
 
 ---
-
-**Contact**: [Your Email] | [Your Website]  
 **Last Updated**: January 2025
